@@ -369,6 +369,17 @@ $curve-easeOutBack: cubic-bezier(0.175, 0.885, 0.32, 1.275);
   transition: border-color 100ms;
 }
 
+.braintree-form__hosted-field input {
+  font-size: 16px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+  color: rgb(0, 0, 0);
+  background: transparent;
+  border: none;
+  outline: none;
+  width: 100%;
+  height: 100%;
+}
+
 .braintree-sheet__content--form {
   padding: 10px 15px 10px 10px;
 

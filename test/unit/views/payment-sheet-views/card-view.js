@@ -1056,6 +1056,7 @@ describe('CardView', function () {
         hostedFieldsInstance: this.fakeHostedFieldsInstance,
         fieldErrors: {},
         model: this.model,
+        merchantCardConfiguration: {},
         client: {
           getConfiguration: fake.configuration
         },

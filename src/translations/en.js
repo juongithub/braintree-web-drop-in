@@ -7,6 +7,7 @@ module.exports = {
   otherWaysToPay: 'Other ways to pay',
   // Errors
   browserNotSupported: 'Browser not supported.',
+  fieldEmptyForCardHolderName: 'Please fill out cardholder name.',
   fieldEmptyForCvv: 'Please fill out a CVV.',
   fieldEmptyForExpirationDate: 'Please fill out an expiration date.',
   fieldEmptyForNumber: 'Please fill out a card number.',
@@ -24,6 +25,8 @@ module.exports = {
   paypalTokenizationRequestActiveError: 'PayPal payment authorization is already in progress.',
   unsupportedCardTypeError: 'This card type is not supported. Please try another card.',
   // Card form
+  cardHolderNameLabel: 'Cardholder Name',
+  cardHolderNamePlaceholder: 'First Last',
   cardNumberLabel: 'Card Number',
   cvvLabel: 'CVV',
   cvvThreeDigitLabelSubheading: '(3 digits)',

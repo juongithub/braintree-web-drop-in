@@ -23,6 +23,8 @@ CardView.prototype._initialize = function () {
   var cvvFieldGroup, postalCodeFieldGroup;
   var cardIcons = this.getElementById('card-view-icons');
   var challenges = this.client.getConfiguration().gatewayConfiguration.challenges;
+  var cardHolderNameFieldGroup = this.getElementById('card-holder-name-field-group');
+
   var hasCVV = challenges.indexOf('cvv') !== -1;
   var hasPostal = challenges.indexOf('postal_code') !== -1;
   var hfOptions = {
@@ -82,6 +84,11 @@ CardView.prototype._initialize = function () {
   this.cvvLabelDescriptor = this.getElementById('cvv-label-descriptor');
   this.fieldErrors = {};
 
+  this.merchantCardConfiguration = this.model.merchantConfiguration.card || {};
+
+  if (!this.merchantCardConfiguration.includeCardHolderName) {
+    cardHolderNameFieldGroup.parentNode.removeChild(cardHolderNameFieldGroup);
+  }
   if (!hasCVV) {
     cvvFieldGroup = this.getElementById('cvv-field-group');
 
@@ -98,6 +105,8 @@ CardView.prototype._initialize = function () {
   this.model.asyncDependencyStarting();
 
   hostedFields.create(hfOptions, function (err, hostedFieldsInstance) {
+    var cardHolderNameInput;
+
     if (err) {
       this.model.asyncDependencyFailed({
         view: this.ID,
@@ -113,6 +122,28 @@ CardView.prototype._initialize = function () {
     this.hostedFieldsInstance.on('notEmpty', this._onNotEmptyEvent.bind(this));
     this.hostedFieldsInstance.on('validityChange', this._onValidityChangeEvent.bind(this));
 
+    if (this.merchantCardConfiguration.includeCardHolderName) {
+      cardHolderNameInput = cardHolderNameFieldGroup.querySelector('input');
+
+      ['blur', 'focus'].forEach(function (listener) {
+        cardHolderNameInput.addEventListener(listener, function () {
+          var event = constructCardHolderNameEvent(cardHolderNameInput);
+
+          this['_on' + capitalize(listener) + 'Event'](event);
+        }.bind(this));
+
+        cardHolderNameInput.addEventListener('keyup', function () {
+          if (cardHolderNameInput.value.length > 0) {
+            classlist.add(cardHolderNameFieldGroup.querySelector('.braintree-form__hosted-field'), 'braintree-form__field--valid');
+            this.hideFieldError('cardHolderName');
+          } else {
+            this.showFieldError('cardHolderName', this.strings.fieldEmptyForCardHolderName);
+            classlist.remove(cardHolderNameFieldGroup.querySelector('.braintree-form__hosted-field'), 'braintree-form__field--valid');
+          }
+        }.bind(this));
+      }.bind(this));
+    }
+
     this.model.asyncDependencyReady();
   }.bind(this));
 };
@@ -122,9 +153,16 @@ CardView.prototype.tokenize = function (callback) {
   var formValid = true;
   var self = this;
   var state = self.hostedFieldsInstance.getState();
+  var cardHolderNameIncluded = this.merchantCardConfiguration.includeCardHolderName;
+  var cardHolderNameInput = this.getElementById('card-holder-name');
   var supportedCardTypes = self.client.getConfiguration().gatewayConfiguration.creditCards.supportedCardTypes;
 
   this.model.clearError();
+
+  if (cardHolderNameIncluded && cardHolderNameInput.value === '') {
+    formValid = false;
+    self.showFieldError('cardHolderName', self.strings.fieldEmptyForCardHolderName);
+  }
 
   Object.keys(state.fields).forEach(function (key) {
     var field = state.fields[key];
@@ -153,6 +191,7 @@ CardView.prototype.tokenize = function (callback) {
       vault: !self.model.isGuestCheckout
     }, function (err, payload) {
       if (err) {
+        console.log(err);
         self.model.reportError(err);
         callback(new Error(constants.errors.NO_PAYMENT_METHOD_ERROR));
         classlist.remove(self.element, 'braintree-sheet--loading');
@@ -162,6 +201,11 @@ CardView.prototype.tokenize = function (callback) {
       Object.keys(state.fields).forEach(function (field) {
         self.hostedFieldsInstance.clear(field);
       });
+
+      if (cardHolderNameIncluded) {
+        payload.details.cardHolderName = cardHolderNameInput.value;
+        cardHolderNameInput.value = '';
+      }
 
       transitionCallback = function () {
         self.model.addPaymentMethod(payload);
@@ -320,6 +364,21 @@ function camelCaseToSnakeCase(string) {
 
 function capitalize(string) {
   return string[0].toUpperCase() + string.substr(1);
+}
+
+function constructCardHolderNameEvent(input) {
+  var field = {
+    isEmpty: input.value === '',
+    isValid: true
+  };
+  var event = {
+    fields: {
+      cardHolderName: field
+    },
+    emittedBy: 'cardHolderName'
+  };
+
+  return event;
 }
 
 module.exports = CardView;
